@@ -15,6 +15,7 @@ import com.google.common.collect.ImmutableMap;
 import org.eclipse.che.api.workspace.server.model.impl.ServerImpl;
 import org.eclipse.che.api.workspace.server.spi.InfrastructureException;
 import org.eclipse.che.api.workspace.server.spi.InternalInfrastructureException;
+import org.slf4j.Logger;
 
 import javax.ws.rs.core.UriBuilder;
 import java.net.MalformedURLException;
@@ -29,15 +30,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 /**
  * Checks readiness of servers of a machine.
  *
  * @author Alexander Garagatyi
  */
 public class ServersReadinessChecker {
+    private static final Logger LOG = getLogger(ServersReadinessChecker.class);
     // workaround to set correct paths for servers readiness checks
     // TODO replace with checks set in server config
-    private static Map<String, String> livenessChecksPaths = ImmutableMap.of("wsagent", "/api/",
+    private static       Map<String, String> livenessChecksPaths = ImmutableMap.of("wsagent", "/api/",
                                                                              "exec-agent", "/process",
                                                                              "terminal", "/");
     private final String                  machineName;
@@ -45,7 +49,8 @@ public class ServersReadinessChecker {
     private final Consumer<String>        serverReadinessHandler;
     private final Timer                   timer;
 
-    private CompletableFuture[] checkTasks;
+    private long                    resultTimeoutSeconds;
+    private CompletableFuture<Void> result;
     /**
      * Creates instance of this class.
      *
@@ -80,7 +85,18 @@ public class ServersReadinessChecker {
             completableTasks.add(serverChecker.getReportCompFuture().thenAccept(serverReadinessHandler));
             serverChecker.start();
         }
-        checkTasks = completableTasks.toArray(new CompletableFuture[completableTasks.size()]);
+        CompletableFuture[] checkTasks = completableTasks.toArray(new CompletableFuture[completableTasks.size()]);
+        resultTimeoutSeconds = checkTasks.length * 180;
+        result = CompletableFuture.allOf(checkTasks);
+        result.handle((aVoid, throwable) -> {
+            if (throwable != null) {
+                // cleanup checkers tasks
+                LOG.error(throwable.getLocalizedMessage(), throwable);
+                timer.cancel();
+                result.obtrudeException(throwable);
+            }
+            return null;
+        });
     }
 
     /**
@@ -98,7 +114,7 @@ public class ServersReadinessChecker {
     public void await() throws InfrastructureException {
         try {
             // TODO how much time should we check?
-            CompletableFuture.allOf(checkTasks).get(checkTasks.length * 180, TimeUnit.SECONDS);
+            result.get(resultTimeoutSeconds, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new InfrastructureException("Machine " + machineName + " start is interrupted");
@@ -113,9 +129,6 @@ public class ServersReadinessChecker {
                 throw new InternalInfrastructureException(
                         "Machine " + machineName + " servers readiness check failed. Error: " + thr.getMessage(), thr);
             }
-        } finally {
-            // cleanup checkers tasks
-            timer.cancel();
         }
     }
 
