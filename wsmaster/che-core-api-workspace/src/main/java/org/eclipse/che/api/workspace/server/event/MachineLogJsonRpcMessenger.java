@@ -19,7 +19,7 @@ import javax.inject.Singleton;
 import java.util.Map;
 
 /**
- * Register subscriber on {@link MachineLogEvent installer log event} for resending
+ * Register subscriber on {@link MachineLogEvent machine log event} for resending
  * this type of event via JSON-RPC to clients.
  *
  * @author Anton Korneta
