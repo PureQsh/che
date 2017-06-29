@@ -249,7 +249,7 @@ public class DockerInternalRuntime extends InternalRuntime<DockerRuntimeContext>
 
         ServersReadinessChecker readinessChecker =
                 new ServersReadinessChecker(name, dockerMachine.getServers(), new ServerReadinessHandler(name));
-        readinessChecker.startChecking();
+        readinessChecker.startAsync();
         readinessChecker.await();
     }
 

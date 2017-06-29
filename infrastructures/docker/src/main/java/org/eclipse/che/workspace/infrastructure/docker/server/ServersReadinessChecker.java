@@ -68,15 +68,12 @@ public class ServersReadinessChecker {
     /**
      * Asynchronously starts checking readiness of servers of a machine.
      *
-     *
      * @throws InternalInfrastructureException
      *         if check of a server failed due to an unexpected error
      * @throws InfrastructureException
-     *         if check of a server failed dut to interruption
-     * @throws InfrastructureException
-     *         if check of a server failed because it reached timeout
+     *         if check of a server failed due to an error
      */
-    public void startChecking() throws InfrastructureException {
+    public void startAsync() throws InfrastructureException {
         List<ServerChecker> serverCheckers = getServerCheckers();
         List<CompletableFuture<Void>> completableTasks = new ArrayList<>(serverCheckers.size());
         for (ServerChecker serverChecker : serverCheckers) {
@@ -86,6 +83,18 @@ public class ServersReadinessChecker {
         checkTasks = completableTasks.toArray(new CompletableFuture[completableTasks.size()]);
     }
 
+    /**
+     * Waits until servers are considered available or one of them is considered as unavailable.
+     *
+     * @throws InternalInfrastructureException
+     *         if check of a server failed due to an unexpected error
+     * @throws InfrastructureException
+     *         if check of a server failed due to interruption
+     * @throws InfrastructureException
+     *         if check of a server failed because it reached timeout
+     * @throws InfrastructureException
+     *         if check of a server failed due to an error
+     */
     public void await() throws InfrastructureException {
         try {
             // TODO how much time should we check?
