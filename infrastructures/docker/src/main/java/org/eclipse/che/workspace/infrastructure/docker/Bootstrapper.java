@@ -64,7 +64,7 @@ public class Bootstrapper {
     private final int                                        bootstrappingTimeoutMinutes;
     private final int                                        serverCheckPeriodSeconds;
     private final int                                        installerTimeoutSeconds;
-    private final String                                     wsOutputEndpoint;
+    private final String                                     outputEndpoint;
     private final String                                     installerEndpoint;
     private final EventService                               eventService;
     private final EventSubscriber<BootstrapperStatusEvent>   bootstrapperStatusListener;
@@ -85,7 +85,7 @@ public class Bootstrapper {
         this.dockerMachine = dockerMachine;
         this.agents = agents;
         this.installerEndpoint = websocketBaseEndpoint + InstallerEndpoint.INSTALLER_WEBSOCKET_ENDPOINT_BASE;
-        this.wsOutputEndpoint = websocketBaseEndpoint + OutputEndpoint.OUTPUT_WEBSOCKET_ENDPOINT_BASE;
+        this.outputEndpoint = websocketBaseEndpoint + OutputEndpoint.OUTPUT_WEBSOCKET_ENDPOINT_BASE;
         this.bootstrappingTimeoutMinutes = bootstrappingTimeoutMinutes;
         this.serverCheckPeriodSeconds = serverCheckPeriodSeconds;
         this.installerTimeoutSeconds = installerTimeoutSeconds;
@@ -133,7 +133,7 @@ public class Bootstrapper {
                                                                runtimeIdentity.getEnvName(),
                                                                runtimeIdentity.getOwner()) +
                                " -push-endpoint " + installerEndpoint + ENDPOINT_IDS.getAndIncrement() +
-                               " -push-logs-endpoint " + wsOutputEndpoint + ENDPOINT_IDS.getAndIncrement() +
+                               " -push-logs-endpoint " + outputEndpoint + ENDPOINT_IDS.getAndIncrement() +
                                " -server-check-period " + serverCheckPeriodSeconds +
                                " -installer-timeout " + installerTimeoutSeconds +
                                " -file " + BOOTSTRAPPER_DIR + CONFIG_FILE,
